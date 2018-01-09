@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <title>Mobile number validation with Javascript</title>
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        
+        <style>
+            body { padding: 5%; }
+            #mobile { margin-bottom: 20px; }
+        </style>
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <h1>Mobile number validation with Javascript</h1>
+                
+                <p>Simple demo which passes mobile phone number to the API on form submit and shows a message based on response.</p>
+                
+                <p>For non UK numbers you will need to include the country code at the start, in either +44 or 0044 format</p>
+                
+                <p><a href="https://developers.alliescomputing.com/postcoder-web-api/mobile-validation">Full mobile validation API documentation</a></p>
+                
+                <br><hr><br>
+                
+                <form id="example_form">
+                    <div class="form-group">
+                        <label for="mobile">Mobile number</label>
+                        <input type="tel" class="form-control" id="mobile" placeholder="Mobile number" aria-required="true" aria-invalid="false" required>
+                    </div>
+                    <button type="submit" class="btn btn-default" id="validate">Validate</button>
+                </form>
+            </div>
+        </div>
+        
+        <script>
+            
+            // Replace with your API key, test key will always return true regardless of mobile number
+            var api_key = "PCW45-12345-12345-1234X";
+            
+            var example_form = document.getElementById("example_form");
+            
+            example_form.addEventListener("submit", function(e) {
+                e.preventDefault();
+                var mobile_field = document.getElementById("mobile");
+                validate_mobile(mobile_field);
+            });
+            
+            function validate_mobile(element) {
+                
+                // Grab the input text and trim any whitespace
+                var mobile_number = element.value.trim();
+                
+                if (mobile_number != "") {
+                
+                    // Remove any previous validation results
+                    var mobile_valid = document.getElementById("mobile_valid");
+                    if(mobile_valid) { mobile_valid.remove(); }
+                    
+                    // Create a template bootstrap alert div
+                    var response_html = document.createElement("div");
+                    response_html.setAttribute("class", "alert");
+                    response_html.setAttribute("role", "alert");
+                    response_html.setAttribute("id", "mobile_valid");
+                
+                    // Create the URL including API key and encoded mobile number
+                    var mobile_url = "https://ws.postcoder.com/pcw/" + api_key + "/mobile/" + encodeURIComponent(mobile_number);
+                    
+                    // Create a loading message
+                    var loading_html = document.createElement("div");
+                    loading_html.setAttribute("id","mobile_loading");
+                    loading_html.textContent = "Validating mobile number...";
+                    
+                    element.insertAdjacentElement("afterend", loading_html);
+
+                    // Call the API
+                    var mobile_request = new XMLHttpRequest();
+                    mobile_request.open("GET", mobile_url, true);
+                    
+                    mobile_request.onload = function () {
+                        if (mobile_request.status >= 200 && mobile_request.status < 400) {
+                            
+                            loading_html.remove();
+
+                            var data = JSON.parse(mobile_request.responseText);
+                            
+                            if(data.valid === true) {
+
+                                // Add relevant class and message to alert template
+                                response_html.classList.add("alert-success");
+                                response_html.textContent = "Mobile number valid";
+
+                                // Add alert to page after mobile field element
+                                element.insertAdjacentElement("afterend", response_html);
+                            
+                                // Set ARIA-invalid attribute of field to false (means it is NOT invalid)
+                                element.setAttribute("aria-invalid", "false");
+
+                                // Additional info such as Network is also returned, full details - https://developers.alliescomputing.com/postcoder-web-api/mobile-validation
+
+                            } else {
+
+                                // Add relevant class and message to alert template
+                                response_html.classList.add("alert-danger");
+                                response_html.textContent = "Mobile number not valid: " + data.state;
+
+                                // Add alert to page after mobile field element
+                                element.insertAdjacentElement("afterend", response_html);
+                            
+                                // Set ARIA-invalid attribute of field to true (means it IS invalid)
+                                element.setAttribute("aria-invalid", "true");
+
+                                // Full list of "state" responses - https://developers.alliescomputing.com/postcoder-web-api/mobile-validation
+
+                            }
+                            
+                        } else {
+                            
+                            loading_html.remove();
+                            
+                            // Triggered if API does not return HTTP code between 200 and 399
+                            // More info - https://developers.alliescomputing.com/postcoder-web-api/error-handling
+                            
+                        }
+                        
+                    };
+                    
+                    mobile_request.onerror = function() {
+                        
+                        loading_html.remove();
+
+                        // Triggered if API cannot be reached
+                        // More info - https://developers.alliescomputing.com/postcoder-web-api/error-handling
+
+                    };
+
+                    mobile_request.send();
+                
+                }
+                
+            }
+
+        </script>
+    </body>
+</html>
